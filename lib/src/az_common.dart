@@ -7,6 +7,9 @@ abstract class ISuspensionBean {
   String getSuspensionTag(); //Suspension Tag
 }
 
+/// Called to build index hint.
+typedef Widget IndexHintBuilder(BuildContext context, String hint);
+
 /// AzListView Header.
 class AzListViewHeader {
   AzListViewHeader({

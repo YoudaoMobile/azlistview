@@ -1,17 +1,17 @@
-import 'package:azlistview/src/az_common.dart';
-import 'package:azlistview/src/index_bar.dart';
-import 'package:azlistview/src/suspension_view.dart';
+import 'az_common.dart';
+import 'az_hint.dart';
+import 'index_bar.dart';
+import 'suspension_view.dart';
 import 'package:flutter/material.dart';
 
 /// Called to build children for the listview.
-typedef Widget ItemWidgetBuilder(BuildContext context, ISuspensionBean model);
+typedef Widget ItemWidgetBuilder(BuildContext context, ISuspensionBean model, int index);
 
 /// Called to build IndexBar.
 typedef Widget IndexBarBuilder(
     BuildContext context, List<String> tags, IndexBarTouchCallback onTouch);
 
-/// Called to build index hint.
-typedef Widget IndexHintBuilder(BuildContext context, String hint);
+
 
 /// _Header.
 class _Header extends ISuspensionBean {
@@ -96,8 +96,6 @@ class _AzListViewState extends State<AzListView> {
   Map<String, int> _suspensionSectionMap = Map();
   List<ISuspensionBean> _cityList = List();
   List<String> _indexTagList = List();
-  bool _isShowIndexBarHint = false;
-  String _indexBarHint = "";
 
   ScrollController _scrollController;
 
@@ -105,6 +103,7 @@ class _AzListViewState extends State<AzListView> {
   void initState() {
     super.initState();
     _scrollController = widget.controller ?? ScrollController();
+    _init();
   }
 
   @override
@@ -114,16 +113,19 @@ class _AzListViewState extends State<AzListView> {
   }
 
   void _onIndexBarTouch(IndexBarDetails model) {
-    setState(() {
-      _indexBarHint = model.tag;
-      _isShowIndexBarHint = model.isTouchDown;
-      int offset = _suspensionSectionMap[model.tag];
-      if (offset != null) {
-        _scrollController.jumpTo(offset
-            .toDouble()
-            .clamp(.0, _scrollController.position.maxScrollExtent));
-      }
-    });
+
+//    AzHintWidgetState hintState = hintKey.currentState;
+//    hintState.setState(() {
+//      hintState.indexBarHint = model.tag;
+//      hintState.isShowIndexBarHint = model.isTouchDown;
+//    });
+
+    int offset = _suspensionSectionMap[model.tag];
+    if (offset != null) {
+      _scrollController.jumpTo(offset
+          .toDouble()
+          .clamp(.0, _scrollController.position.maxScrollExtent));
+    }
   }
 
   void _init() {
@@ -150,9 +152,10 @@ class _AzListViewState extends State<AzListView> {
     }
   }
 
+  final GlobalKey<AzHintWidgetState> hintKey = GlobalKey<AzHintWidgetState>();
+
   @override
   Widget build(BuildContext context) {
-    _init();
     var children = <Widget>[
       SuspensionView(
         data: widget.header == null ? _cityList : _cityList.sublist(1),
@@ -168,7 +171,7 @@ class _AzListViewState extends State<AzListView> {
                     height: widget.header.height.toDouble(),
                     child: widget.header.builder(context));
               }
-              return widget.itemBuilder(context, _cityList[index]);
+              return widget.itemBuilder(context, _cityList[index], index);
             }),
         suspensionWidget: widget.suspensionWidget,
         controller: _scrollController,
@@ -199,31 +202,9 @@ class _AzListViewState extends State<AzListView> {
       alignment: Alignment.centerRight,
       child: indexBar,
     ));
-    Widget indexHint;
-    if (widget.indexHintBuilder != null) {
-      indexHint = widget.indexHintBuilder(context, '$_indexBarHint');
-    } else {
-      indexHint = Card(
-        color: Colors.black54,
-        child: Container(
-          alignment: Alignment.center,
-          width: 80.0,
-          height: 80.0,
-          child: Text(
-            '$_indexBarHint',
-            style: TextStyle(
-              fontSize: 32.0,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      );
-    }
 
-    if (_isShowIndexBarHint && widget.showIndexHint) {
-      children.add(Center(
-        child: indexHint,
-      ));
+    if (widget.showIndexHint) {
+      children.add(AzHintWidget(widget.indexHintBuilder, key: hintKey,));
     }
 
     return new Stack(children: children);
